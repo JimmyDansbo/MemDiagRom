@@ -1,4 +1,3 @@
-.pc02
 ;.org $C000
 .segment "DIAG"
 
