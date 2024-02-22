@@ -802,7 +802,7 @@ screen_set_charset:
 	lda	#>charset
 	sta	mem_ptr+1
 	ldx	#2			; 64 charactes * 8 bytes = 512 bytes
-	ldy	#0
+	ldy	#0			; = 2 * 256
 :	lda	(mem_ptr),y
 	sta	VERA_DATA0
 	iny
@@ -1036,7 +1036,7 @@ kbd_bin_tbl:	.byte 0,1,4,5,2,3,6,7
 .repeat $20, i
 	.charmap i+$40, i
 .endrepeat
-header:		.asciiz "MEMORY DIAGNOSTIC V0.3 2024 - HTTPS://JNZ.DK?MDIAG"
+header:		.asciiz "MEMORY DIAGNOSTIC V0.4 2024 - HTTPS://JNZ.DK?MDIAG"
 line:		.asciiz "===================================================="
 first_ok:	.asciiz "LOW RAM $0000-$9EFF TESTED OK!                    PASS#:$0000"
 find_banks:	.asciiz "TESTING HIGHEST MEMORY BANK AVAILABLE... $"
@@ -1081,7 +1081,7 @@ continue_original:
 do_diag:jmp	start
 
 .segment "NAME"
-DEVINFO: .byte "JIMMY DANSBO - V0.3 - 2024"
+DEVINFO: .byte "JIMMY DANSBO - V0.4 - 2024"
 
 .segment "VECTORS"
 .word	start	;nmi
