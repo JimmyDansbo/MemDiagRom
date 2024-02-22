@@ -801,16 +801,14 @@ screen_set_charset:
 	sta	mem_ptr
 	lda	#>charset
 	sta	mem_ptr+1
-	ldx	#8			; Each character is 8 bytes
+	ldx	#2			; 64 charactes * 8 bytes = 512 bytes
 	ldy	#0
 :	lda	(mem_ptr),y
 	sta	VERA_DATA0
 	iny
-	cpy	#$40			; Copy $40 characters to VERA
 	bne	:-
 	inc	mem_ptr+1
 	dex
-	ldy	#0
 	bne	:-
 	rts
 
@@ -861,7 +859,7 @@ vera_init:
 	stz	VERA_ADDR_L
 	; Clear the screen with black background
 	ldx	#64
-	ldy	#50
+	ldy	#51
 	
 clrscr:	phx
 @loop:	lda	#$20			; Space character
