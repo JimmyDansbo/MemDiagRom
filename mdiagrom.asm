@@ -77,33 +77,34 @@ basemem_ret:
 	PRINTSTR num
 
 test_start:
-	ldx	#26
-	stx	num_x
-	lda	#8
+	ldx	#26			; The bank number being tested is printed
+	stx	num_x			; at X coordinate 26
+	lda	#8			; First line of text is at 1, 8
 	sta	y_cord
 	lda	#1
 	sta	x_cord
 
+	; Test of banked memory
 	sta	testnum
-	lda	#%00000000
+	lda	#%00000000		; Test pattern
 	jsr	testpattern
-	inc	y_cord
+	inc	y_cord			; Extra line between each test pattern
 	inc	y_cord
 
 	inc	testnum
-	lda	#%01010101
+	lda	#%01010101		; Test pattern
 	jsr	testpattern
-	inc	y_cord
+	inc	y_cord			; Extra line between each test pattern
 	inc	y_cord
 
 	inc	testnum
-	lda	#%00110011
+	lda	#%00110011		; Test pattern
 	jsr	testpattern
-	inc	y_cord
+	inc	y_cord			; Extra line between each test pattern
 	inc	y_cord
 
 	inc	testnum
-	lda	#%00001111
+	lda	#%00001111		; Test pattern
 	jsr	testpattern
 
 	lda	#5
@@ -112,7 +113,7 @@ test_start:
 	inc	y_cord
 	lda	#%00000000
 	sta	currpattern
-
+	; Test of base memory
 btest:
 	GOTOXY x_cord, y_cord
 	PRINTSTR low_ram
@@ -128,7 +129,6 @@ btest:
 	jsr	testbase
 	inc	y_cord
 	lda	currpattern
-
 	cmp	#$00
 	bne	:+
 	lda	#$55
@@ -145,11 +145,11 @@ btest:
 	sta	currpattern
 	bra	btest
 
-:	lda	#7
+:	lda	#7			; Show that tests are done
 	jsr	kbdwrite
 	jsr	show_pass_done
 
-	inc	pass_num
+	inc	pass_num		; Update number of passes
 	bne	:+
 	inc	pass_num+1
 :	GOTOXY	#58, #4
@@ -175,6 +175,30 @@ btest:
 
 	jmp	test_start
 
+; Print the pattern currently in .A register
+printpat:
+	cmp	#$00
+	bne	:+
+	jmp	print1stpat	;00000000
+:	cmp	#$FF
+	bne	:+
+	jmp	print1stinv	;11111111
+:	cmp	#$55
+	bne	:+
+	jmp	print2ndpat	;01010101
+:	cmp	#$AA
+	bne	:+
+	jmp	print2ndinv	;10101010
+:	cmp	#$33
+	bne	:+
+	jmp	print3rdpat	;00110011
+:	cmp	#$CC
+	bne	:+
+	jmp	print3rdinv	;11001100
+:	cmp	#$0F
+	bne	:+
+	jmp	print4thpat	;00001111
+:	jmp	print4thinv	;11110000
 print1stpat:
 	PRINTSTR first_pattern
 	rts
@@ -199,99 +223,82 @@ print4thpat:
 print4thinv:
 	PRINTSTR fourth_invert
 	rts
-printpat:
-	cmp	#$00
-	bne	:+
-	jmp	print1stpat
-:	cmp	#$FF
-	bne	:+
-	jmp	print1stinv
-:	cmp	#$55
-	bne	:+
-	jmp	print2ndpat
-:	cmp	#$AA
-	bne	:+
-	jmp	print2ndinv
-:	cmp	#$33
-	bne	:+
-	jmp	print3rdpat
-:	cmp	#$CC
-	bne	:+
-	jmp	print3rdinv
-:	cmp	#$0F
-	bne	:+
-	jmp	print4thpat
-:	jmp	print4thinv	
 
+; Test all memory banks with a specific pattern
 testpattern:
-	sta	currpattern
-	lda	testnum
+	sta	currpattern		; Save the pattern for later use
+	lda	testnum			; Show the test number on keyboard LEDs
 	jsr	kbdwrite
 	GOTOXY	x_cord, y_cord
-	PRINTSTR fill_pattern
+	PRINTSTR fill_pattern		; Print that banks are being filled
 	lda	currpattern
-	jsr	printpat
+	jsr	printpat		; Print the current pattern
 	lda	currpattern
-	jsr	fillbanks
+	jsr	fillbanks		; Fill banks with current pattern
 
 	inc	y_cord
 	GOTOXY	x_cord, y_cord
-	PRINTSTR test_up
-	lda	currpattern		;00
-	jsr	printpat
+	PRINTSTR test_up		; Print that test is done ascending
 	lda	currpattern
-	jsr	up_test
+	jsr	printpat		; Print the current pattern
+	lda	currpattern
+	jsr	up_test			; Test&invert the banks ascending
 
 	inc	y_cord
 	GOTOXY	x_cord, y_cord
-	PRINTSTR test_up
+	PRINTSTR test_up		; Print that test is done ascending
 	lda	currpattern
-	eor	#$FF			;FF
+	eor	#$FF			; Invert pattern
 	sta	currpattern
-	jsr	printpat
+	jsr	printpat		; Print the current pattern
 	lda	currpattern
-	jsr	up_test
+	jsr	up_test			; Test&invert the banks ascending
 
 	inc	y_cord
 	GOTOXY	x_cord, y_cord
-	PRINTSTR test_dn
+	PRINTSTR test_dn		; Print that test is done descending
 	lda	currpattern
-	eor	#$FF			;00
+	eor	#$FF			; Invert pattern
 	sta	currpattern
-	jsr	printpat
+	jsr	printpat		; Print the current pattern
 	lda	currpattern
-	jsr	down_test
+	jsr	down_test		; Test&invert the banks descending
 
 	inc	y_cord
 	GOTOXY	x_cord, y_cord
-	PRINTSTR test_dn
+	PRINTSTR test_dn		; Print that test is done descending
 	lda	currpattern
-	eor	#$FF			;FF
+	eor	#$FF			; Invert pattern
 	sta	currpattern
-	jsr	printpat
+	jsr	printpat		; Print the current pattern
 	lda	currpattern
-	jsr	down_test
+	jsr	down_test		; Test&invert the banks descending
 
 	inc	y_cord
 	GOTOXY	x_cord, y_cord
-	PRINTSTR test_final
+	PRINTSTR test_final		; Print that this is final test
 	lda	currpattern
-	eor	#$FF			;00
+	eor	#$FF			; Invert pattern
 	sta	currpattern
-	jsr	printpat
+	jsr	printpat		; Print the current pattern
 	lda	currpattern
-	jmp	testbanks
+	jmp	testbanks		; Test the banks
 
 ; .A = code to show on LEDs in binary
 kbdwrite:
-	pha
-	I2C_WRITE_FIRST_BYTE I2C_KBD_VAL, I2C_SMC, I2C_KBD_CMD2
-	plx
+	pha		; Store binary code on stack
+	; Tell SMC that we are sending a command to the keyboard
+	; and that we want to set the keyboard LEDs
+	I2C_WRITE_FIRST_BYTE KBD_SET_LEDS_CMD, I2C_SMC, KBD_2BYTE_CMD
+	plx		; Retrieve binary code from stack
+	; The LEDs on the keyboard do not line up with a binary number
+	; kbd_bin_tbl ensures that the number in .X is shown correctly
 	lda	kbd_bin_tbl,x
-	I2C_WRITE
-	I2C_STOP
+	jsr	i2c_write
+	jsr	i2c_stop
 	rts
 
+; Blink the activity light 5 times to show that a pass is completed
 show_pass_done:
 	ldx	#5
 	lda	#$FF
@@ -313,6 +320,7 @@ show_pass_done:
 	jsr	i2c_write_b
 	rts
 
+; Delay for approximately 1 second
 delayone:
 	DELAY ONESEC
 	rts
@@ -392,11 +400,13 @@ handle_error:
 	ldy	err_low_addr		; X register restored by caller
 	rts
 
+; Write on screen that tests have stopped
 print_test_stop:
 	GOTOXY #12, #49
 	PRINTSTR test_stop, ((BLACK<<4)|RED)
 	rts
 
+; Fill basememory pages above stack page with a specific pattern
 fillpages:
 	ldx	#<$0200		; Store initial base address to ZP
 	stx	mem_ptr
@@ -420,6 +430,7 @@ fillpages:
 	bra	@memloop
 :	rts
 
+; Do ascending test&invert of basemem pages above stack page 
 page_up:
 	ldx	#<$0200		; Store initial base address to ZP
 	stx	mem_ptr
@@ -450,6 +461,7 @@ page_up:
 	bra	@memloop
 :	rts
 
+; Do descending test&invert of basemem pages above stack page
 page_down:
 	ldx	#<$9E00
 	stx	mem_ptr
@@ -481,6 +493,7 @@ page_down:
 	bra	@memloop
 :	rts
 
+; Test pattern of base memory pages above stack page
 testpages:
 	ldx	#<$0200		; Store initial base address to ZP
 	stx	mem_ptr
@@ -507,7 +520,8 @@ testpages:
 	stx	mem_ptr+1		; Save new page
 	bra	@memloop
 :	rts
-	
+
+; Do a complete test of base memory
 testbase:
 	jsr	fillpages
 	jsr	page_up
@@ -521,6 +535,7 @@ testbase:
 	jsr	testpages
 	rts
 
+; Fill all available memory banks with a specific testpattern
 fillbanks:
 	stz	RAM_BANK
 	ldx	#<RAM_BANK_START
@@ -549,6 +564,7 @@ fillbanks:
 	bra	@memloop
 :	rts
 
+; Do an ascending test&invert of all available memory banks
 up_test:
 	stz	RAM_BANK
 	ldx	#<RAM_BANK_START
@@ -584,6 +600,7 @@ up_test:
 	bra	@memloop
 :	rts
 
+; Do a descending test&invert of all available memory banks
 down_test:
 	pha
 	lda	numbanks
@@ -624,6 +641,7 @@ down_test:
 	bra	@memloop
 :	rts
 
+; Test all available memory banks with specific pattern
 testbanks:
 	stz	RAM_BANK
 	ldx	#<RAM_BANK_START
@@ -655,7 +673,8 @@ testbanks:
 	pla
 	bra	@memloop
 :	rts
-	
+
+; Convert the byte in .A into a hex in the num string
 byte2hex:
 	ldy	#0
 	pha
@@ -677,12 +696,14 @@ byte2hex:
 	sta	num,y
 	rts
 
+; Print the number in .A as a hexadecimal number at num_x, y_cord coordinates
 printnum:
 	jsr	byte2hex
 	GOTOXY num_x, y_cord
 	PRINTSTR num
 	rts
 
+; "Borrowed" from official ROM
 detectbanks:
 ;
 ; detect number of RAM banks
@@ -730,6 +751,7 @@ detectbanks:
 	dec
 	rts
 
+; Convert X, Y coordinates to VERA address
 gotoxy:
 	txa
 	asl
@@ -740,6 +762,7 @@ gotoxy:
 	sta	VERA_ADDR_M
 	rts
 
+; Print a string, pointed to by str_ptr
 printstr:
 	ldy	#0			; Use .Y as index into string
 @loop:	lda	(str_ptr),y
@@ -765,28 +788,7 @@ vera_wait_ready:
 	bne	vera_wait_ready
 	rts
 
-upload_default_palette:
-	stz	VERA_CTRL
-	lda	#<VERA_PALETTE_BASE
-	sta	VERA_ADDR_L
-	lda	#>VERA_PALETTE_BASE
-	sta	VERA_ADDR_M
-	lda	#(^VERA_PALETTE_BASE) | $10
-	sta	VERA_ADDR_H
-
-	ldx #0
-@loop1:
-	lda default_palette,x
-	sta VERA_DATA0
-	inx
-	bne @loop1
-@loop2:
-	lda default_palette+256,x
-	sta VERA_DATA0
-	inx
-	bne @loop2
-	rts
-
+; Copy character set to VERA
 screen_set_charset:
 	lda	#<charset_addr
 	sta	VERA_ADDR_L
@@ -799,24 +801,26 @@ screen_set_charset:
 	sta	mem_ptr
 	lda	#>charset
 	sta	mem_ptr+1
-	ldx	#8
+	ldx	#8			; Each character is 8 bytes
 	ldy	#0
 :	lda	(mem_ptr),y
 	sta	VERA_DATA0
 	iny
+	cpy	#$40			; Copy $40 characters to VERA
 	bne	:-
 	inc	mem_ptr+1
 	dex
+	ldy	#0
 	bne	:-
 	rts
 
+; Initialize VERA
 vera_init:
 	jsr	vera_wait_ready
 	lda	#1
 	sta	VERA_IEN
 	stz	VERA_CTRL
 	jsr	screen_set_charset
-	jsr	upload_default_palette
 
 	; Layer 1 configuration
 	lda	#%01100000		; Map Height = 01b = 64 tiles
@@ -856,8 +860,8 @@ vera_init:
 	sta	VERA_ADDR_M
 	stz	VERA_ADDR_L
 	; Clear the screen with black background
-	ldx	#80
-	ldy	#60
+	ldx	#64
+	ldy	#50
 	
 clrscr:	phx
 @loop:	lda	#$20			; Space character
@@ -899,17 +903,17 @@ i2c_write_b:
 	I2C_START
 	pla			; address from stack 
 	asl
-	I2C_WRITE
+	jsr	i2c_write
 	bcc	:+
 	jmp	error
 :	pla			; offset from stack
-	I2C_WRITE
+	jsr	i2c_write
 	pla			; value from stack
-	I2C_WRITE
-	I2C_STOP
+	jsr	i2c_write
+	jsr	i2c_stop
 	clc
 	bra	end
-error:	sec
+error:	sec			; Ensure stack is cleared on error
 	pla
 	pla
 end:	pla			; Restore registers from stack
@@ -917,6 +921,14 @@ end:	pla			; Restore registers from stack
 	plx
 	rts
 .endscope
+
+i2c_write:
+	I2C_WRITE
+	rts
+
+i2c_stop:
+	I2C_STOP
+	rts
 
 ; !!!!!!!!!!!!!!!! NO STACK USAGE IN BELOW CODE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 basemem_test:
@@ -956,7 +968,6 @@ basemem_test:
 
 	; Test base memory
 	lda	#%00000000
-
 basetest:
 	ldx	#$01	; Store address $0100 to ZP
 	ldy	#$00
@@ -997,7 +1008,7 @@ done:	; Turn activity LED off
 catastrophic_error:
 .scope
 	lda	#24		; 24 loops is approximately 60 seconds
-	sta	RAM_BANK	; RAM_BANK is just used storage here...
+	sta	RAM_BANK	; RAM_BANK is just used as storage here...
 loop:	I2C_WRITE_BYTE $FF, I2C_SMC, SMC_activity_led
 	DELAY	ONESEC/2
 	I2C_WRITE_BYTE $00, I2C_SMC, SMC_activity_led
@@ -1021,8 +1032,8 @@ loop:	I2C_WRITE_BYTE $FF, I2C_SMC, SMC_activity_led
 .endscope
 	jmp	catastrophic_error
 ;!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-kbd_bin_tbl:	.byte 0,1,4,5,2,3,6,7
 
+kbd_bin_tbl:	.byte 0,1,4,5,2,3,6,7
 ; convert ASCII codes to VERA screen codes
 .repeat $20, i
 	.charmap i+$40, i
@@ -1058,7 +1069,6 @@ hex_table:	.byte "0123456789ABCDEF"
 .endrepeat
 
 .include "charset.inc"
-.include "palette.inc"
 
 .segment "ROMINIT"
 	jmp	:+
