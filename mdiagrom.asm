@@ -1,5 +1,6 @@
 .pc02
-.org $C000
+;.org $C000
+.segment "DIAG"
 
 .include "cx16.inc"
 .include "vera0.9.inc"
@@ -1081,10 +1082,10 @@ loop:	I2C_WRITE_BYTE $FF, I2C_SMC, SMC_activity_led
 ;!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 kbd_bin_tbl:	.byte 0,1,4,5,2,3,6,7
 
+; convert ASCII codes to VERA screen codes
 .repeat $20, i
 	.charmap i+$40, i
 .endrepeat
-
 header:		.asciiz "MEMORY DIAGNOSTIC V0.3 2024 - HTTPS://JNZ.DK?MDIAG"
 line:		.asciiz "===================================================="
 first_ok:	.asciiz "LOW RAM $0000-$9EFF TESTED OK!                    PASS#:$0000"
@@ -1110,40 +1111,34 @@ err_dn:		.asciiz "DN$"
 err_to:		.asciiz "TO$"
 test_stop:	.asciiz " !!! TOO MANY ERRORS, TEST STOPPED !!! "
 hex_table:	.byte "0123456789ABCDEF"
-
+; convert ASCII codes back to normal ASCII
+.repeat $20, i
+	.charmap i+$40, i+$40
+.endrepeat
 
 .include "charset.inc"
 .include "palette.inc"
-
-
 
 romstart=$E997	; This information is found in kernal.sym (search for start)
 romnmi=$E9BD	; This information is found in kernal.sym 
 ; start & romnmi in ROM bank 0 uses 4 bytes to switch ROM bank over to
 ; ROM bank 16. Hence this code starts at romnmi or romstart address + 4
 
-.res romstart-*, $41
-
-	bra	:+
+.segment "ROMINIT"
+	jmp	:+
 continue_original:
 	stz	$01		; Reset ROM bank to 0
-.res romnmi-*, $42
+.segment "ROMNMI"
 :	I2C_READ_BYTE I2C_SMC, 9
 	cpx	#1		; If this byte is set to 1
 	beq	do_diag		; poweron has been done with a long-press
 	jmp	continue_original
 do_diag:jmp	start
 
-.repeat $20, i
-	.charmap i+$40, i+$40
-.endrepeat
-
-; 26 = length of DEVINFO string
-.res $FFFA-26-*, $43
-
+.segment "NAME"
 DEVINFO: .byte "JIMMY DANSBO - V0.3 - 2024"
 
-; *=$FFFA
+.segment "VECTORS"
 .word	start	;nmi
 .word	start	;start
 .word	$0000	;irq
