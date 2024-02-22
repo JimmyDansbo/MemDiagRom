@@ -977,86 +977,81 @@ basemem_test:
 	; Turn Activity light on
 	I2C_WRITE_BYTE $FF, I2C_SMC, SMC_activity_led
 	; Test zero-page
-	FILLPAGE $0000, $00, $02
-	TEST_PAGE_UP $0000, $00, $02, catastrophic_error
-	TEST_PAGE_UP $0000, $FF, $02, catastrophic_error
-	TEST_PAGE_DN $0000, $00, $FF, $02, catastrophic_error
-	TEST_PAGE_DN $0000, $FF, $FF, $02, catastrophic_error
-	TEST_PAGE $0000, $00, $02, catastrophic_error
-	FILLPAGE $0000, $55, $02
-	TEST_PAGE_UP $0000, $55, $02, catastrophic_error
-	TEST_PAGE_UP $0000, $AA, $02, catastrophic_error
-	TEST_PAGE_DN $0000, $55, $FF, $02, catastrophic_error
-	TEST_PAGE_DN $0000, $AA, $FF, $02, catastrophic_error
-	TEST_PAGE $0000, $55, $02, catastrophic_error
-	FILLPAGE $0000, $33, $02
-	TEST_PAGE_UP $0000, $33, $02, catastrophic_error
-	TEST_PAGE_UP $0000, $CC, $02, catastrophic_error
-	TEST_PAGE_DN $0000, $33, $FF, $02, catastrophic_error
-	TEST_PAGE_DN $0000, $CC, $FF, $02, catastrophic_error
-	TEST_PAGE $0000, $33, $02, catastrophic_error
-	FILLPAGE $0000, $0F, $02
-	TEST_PAGE_UP $0000, $0F, $02, catastrophic_error
-	TEST_PAGE_UP $0000, $F0, $02, catastrophic_error
-	TEST_PAGE_DN $0000, $0F, $FF, $02, catastrophic_error
-	TEST_PAGE_DN $0000, $F0, $FF, $02, catastrophic_error
-	TEST_PAGE $0000, $0F, $02, catastrophic_error
+	lda	#$00
+@zptest:
+	FILL_ZP
+	TEST_ZP_UP catastrophic_error
+	eor	#$FF
+	TEST_ZP_UP catastrophic_error
+	eor	#$FF
+	TEST_ZP_DN catastrophic_error
+	eor	#$FF
+	TEST_ZP_DN catastrophic_error
+	eor	#$FF
+	TEST_ZP catastrophic_error
+	cmp	#$00
+	beq	@set55
+	cmp	#$55
+	beq	@set33
+	cmp	#$33
+	beq	@set0f
+	bra	@continue
+@set55:	lda	#$55
+	jmp	@zptest
+@set33:	lda	#$33
+	jmp	@zptest
+@set0f:	lda	#$0F
+	jmp	@zptest
+@continue:
 	; zero-page seems to be alright in it self
 
 	; Turn Activity LED off
 	I2C_WRITE_BYTE $00, I2C_SMC, SMC_activity_led
-	; Test base memory 00000000
+
+	; Test base memory
+	lda	#%00000000
+
+basetest:
 	ldx	#$01	; Store address $0100 to ZP
 	ldy	#$00
 	sty	mem_ptr
 	stx	mem_ptr+1
-	; Compare the written values to ensure they are correct
-	cpy	mem_ptr
-	beq	:+
-	jmp	catastrophic_error
-:	cpx	mem_ptr+1
-	beq	:+
-	jmp	catastrophic_error
-:	TESTMEM %00000000
-
+	TESTMEM
+	cmp	#$00
+	beq	base55
+	cmp	#$55
+	bne	:+
+	jmp	base33
+:	cmp	#$33
+	bne	:+
+	jmp	base0f
+:	jmp	done
+base55:
 	; Turn activity LED on
 	I2C_WRITE_BYTE $FF, I2C_SMC, SMC_activity_led
-	; Test base memory 01010101
-	; Reset zero-page pointer to $0100
-	ldx	#$01
-	stx	mem_ptr+1
-	ldy	#$00
-	TESTMEM %01010101
-
+	lda	#$55
+	jmp	basetest
+base33:
 	; Turn activity LED off
 	I2C_WRITE_BYTE $00, I2C_SMC, SMC_activity_led
-	; Test base memory 00110011
-	; Reset zero-page pointer to $0100
-	ldx	#$01
-	stx	mem_ptr+1
-	ldy	#$00
-	TESTMEM %00110011
-
+	lda	#$33
+	jmp	basetest
+base0f:
 	; Turn activity LED on
 	I2C_WRITE_BYTE $FF, I2C_SMC, SMC_activity_led
-	; Test base memory 00001111
-	; Reset zero-page pointer to $0100
-	ldx	#$01
-	stx	mem_ptr+1
-	ldy	#$00
-	TESTMEM %00001111
+	lda	#$0F
+	jmp	basetest
 
-	; Turn activity LED off
+done:	; Turn activity LED off
 	I2C_WRITE_BYTE $00, I2C_SMC, SMC_activity_led
-
 	; Base memory seems to be good now we can start using
 	; stack and zero page for real
 	jmp	basemem_ret
 
-	catastrophic_error:
+catastrophic_error:
 .scope
 	lda	#24		; 24 loops is approximately 60 seconds
-	sta	RAM_BANK
+	sta	RAM_BANK	; RAM_BANK is just used storage here...
 loop:	I2C_WRITE_BYTE $FF, I2C_SMC, SMC_activity_led
 	DELAY	ONESEC/2
 	I2C_WRITE_BYTE $00, I2C_SMC, SMC_activity_led
@@ -1072,6 +1067,8 @@ loop:	I2C_WRITE_BYTE $FF, I2C_SMC, SMC_activity_led
 	dec	RAM_BANK
 	beq	:+
 	jmp	loop
+	; Switch between VGA & Composit/S-Video output approximately
+	; once a minute
 :	lda	VERA_DC_VIDEO
 	eor	#$03
 	sta	VERA_DC_VIDEO
@@ -1117,15 +1114,11 @@ hex_table:	.byte "0123456789ABCDEF"
 .include "charset.inc"
 .include "palette.inc"
 
-romstart=$E997	; This information is found in kernal.sym (search for start)
-romnmi=$E9BD	; This information is found in kernal.sym 
-; start & romnmi in ROM bank 0 uses 4 bytes to switch ROM bank over to
-; ROM bank 16. Hence this code starts at romnmi or romstart address + 4
-
 .segment "ROMINIT"
 	jmp	:+
 continue_original:
 	stz	$01		; Reset ROM bank to 0
+
 .segment "ROMNMI"
 :	I2C_READ_BYTE I2C_SMC, 9
 	cpx	#1		; If this byte is set to 1
