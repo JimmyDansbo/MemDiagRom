@@ -23,15 +23,15 @@ MACROS_INC=1
 	jsr	gotoxy
 .endmacro
 
-.macro PRINTSTR str, color
+.macro PRINTSTR str, col
 	lda	#<str
 	sta	str_ptr
 	lda	#>str
 	sta	str_ptr+1
-	.ifnblank color
-		ldx	#color
+	.ifnblank col
+		ldx	#col
 	.else
-		ldx	col
+		ldx	color
 	.endif
 	jsr	printstr
 .endmacro

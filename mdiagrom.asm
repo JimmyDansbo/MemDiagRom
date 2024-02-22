@@ -36,7 +36,9 @@ err_test_type		= r8l
 
 pass_num		= r9
 
-col			= r10l
+color			= r10l
+testnum			= r10h
+currpattern		= r11l
 
 start:
 	sei	; Disable interrupts, we don't have anything handling them
@@ -56,7 +58,7 @@ basemem_ret:
 	stz	pass_num+1
 
 	lda	#((BLUE<<4)|WHITE);Initialize standard color
-	sta	col
+	sta	color
 
 	lda	#0		; Turn all keyboard LEDs off
 	jsr	kbdwrite
@@ -77,236 +79,73 @@ basemem_ret:
 test_start:
 	ldx	#26
 	stx	num_x
+	lda	#8
+	sta	y_cord
 	lda	#1
-	jsr	kbdwrite
-	;00000000
-	GOTOXY #1, #8
-	PRINTSTR fill_pattern
-	PRINTSTR first_pattern
+	sta	x_cord
+
+	sta	testnum
 	lda	#%00000000
-	jsr	fillbanks
+	jsr	testpattern
+	inc	y_cord
+	inc	y_cord
 
-	inc	y_cord
-	GOTOXY x_cord, y_cord
-	PRINTSTR test_up
-	PRINTSTR first_pattern
-	lda	#%00000000
-	jsr	up_test
-
-	inc	y_cord
-	GOTOXY x_cord, y_cord
-	PRINTSTR test_up
-	PRINTSTR first_invert
-	lda	#%11111111
-	jsr	up_test
-
-	inc	y_cord
-	GOTOXY x_cord, y_cord
-	PRINTSTR test_dn
-	PRINTSTR first_pattern
-	lda	#%00000000
-	jsr	down_test
-
-	inc	y_cord
-	GOTOXY x_cord, y_cord
-	PRINTSTR test_dn
-	PRINTSTR first_invert
-	lda	#%11111111
-	jsr	down_test
-
-	inc	y_cord
-	GOTOXY x_cord, y_cord
-	PRINTSTR test_final
-	PRINTSTR first_pattern
-	lda	#%00000000
-	jsr	testbanks
-
-	lda	#2
-	jsr	kbdwrite
-	;01010101
-	inc	y_cord
-	inc	y_cord
-	GOTOXY x_cord, y_cord
-	PRINTSTR fill_pattern
-	PRINTSTR second_pattern
+	inc	testnum
 	lda	#%01010101
-	jsr	fillbanks
+	jsr	testpattern
+	inc	y_cord
+	inc	y_cord
 
-	inc	y_cord
-	GOTOXY x_cord, y_cord
-	PRINTSTR test_up
-	PRINTSTR second_pattern
-	lda	#%01010101
-	jsr	up_test
-
-	inc	y_cord
-	GOTOXY x_cord, y_cord
-	PRINTSTR test_up
-	PRINTSTR second_invert
-	lda	#%10101010
-	jsr	up_test
-
-	inc	y_cord
-	GOTOXY x_cord, y_cord
-	PRINTSTR test_dn
-	PRINTSTR second_pattern
-	lda	#%01010101
-	jsr	down_test
-
-	inc	y_cord
-	GOTOXY x_cord, y_cord
-	PRINTSTR test_dn
-	PRINTSTR second_invert
-	lda	#%10101010
-	jsr	down_test
-
-	inc	y_cord
-	GOTOXY x_cord, y_cord
-	PRINTSTR test_final
-	PRINTSTR second_pattern
-	lda	#%01010101
-	jsr	testbanks
-
-	lda	#3
-	jsr	kbdwrite
-	;00110011
-	inc	y_cord
-	inc	y_cord
-	GOTOXY x_cord, y_cord
-	PRINTSTR fill_pattern
-	PRINTSTR third_pattern
+	inc	testnum
 	lda	#%00110011
-	jsr	fillbanks
+	jsr	testpattern
+	inc	y_cord
+	inc	y_cord
 
-	inc	y_cord
-	GOTOXY x_cord, y_cord
-	PRINTSTR test_up
-	PRINTSTR third_pattern
-	lda	#%00110011
-	jsr	up_test
-
-	inc	y_cord
-	GOTOXY x_cord, y_cord
-	PRINTSTR test_up
-	PRINTSTR third_invert
-	lda	#%11001100
-	jsr	up_test
-
-	inc	y_cord
-	GOTOXY x_cord, y_cord
-	PRINTSTR test_dn
-	PRINTSTR third_pattern
-	lda	#%00110011
-	jsr	down_test
-
-	inc	y_cord
-	GOTOXY x_cord, y_cord
-	PRINTSTR test_dn
-	PRINTSTR third_invert
-	lda	#%11001100
-	jsr	down_test
-
-	inc	y_cord
-	GOTOXY x_cord, y_cord
-	PRINTSTR test_final
-	PRINTSTR third_pattern
-	lda	#%00110011
-	jsr	testbanks
-
-	lda	#4
-	jsr	kbdwrite
-	;00001111
-	inc	y_cord
-	inc	y_cord
-	GOTOXY x_cord, y_cord
-	PRINTSTR fill_pattern
-	PRINTSTR fourth_pattern
+	inc	testnum
 	lda	#%00001111
-	jsr	fillbanks
-
-	inc	y_cord
-	GOTOXY x_cord, y_cord
-	PRINTSTR test_up
-	PRINTSTR fourth_pattern
-	lda	#%00001111
-	jsr	up_test
-
-	inc	y_cord
-	GOTOXY x_cord, y_cord
-	PRINTSTR test_up
-	PRINTSTR fourth_invert
-	lda	#%11110000
-	jsr	up_test
-
-	inc	y_cord
-	GOTOXY x_cord, y_cord
-	PRINTSTR test_dn
-	PRINTSTR fourth_pattern
-	lda	#%00001111
-	jsr	down_test
-
-	inc	y_cord
-	GOTOXY x_cord, y_cord
-	PRINTSTR test_dn
-	PRINTSTR fourth_invert
-	lda	#%11110000
-	jsr	down_test
-
-	inc	y_cord
-	GOTOXY x_cord, y_cord
-	PRINTSTR test_final
-	PRINTSTR fourth_pattern
-	lda	#%00001111
-	jsr	testbanks
+	jsr	testpattern
 
 	lda	#5
 	jsr	kbdwrite
 	inc	y_cord
 	inc	y_cord
-	GOTOXY x_cord, y_cord
-	PRINTSTR low_ram
-	PRINTSTR first_pattern
-	lda	#$2F		; /
-	sta	VERA_DATA0
-	inc	VERA_ADDR_L
-	PRINTSTR first_invert
 	lda	#%00000000
-	jsr	testbase
+	sta	currpattern
 
-	inc	y_cord
+btest:
 	GOTOXY x_cord, y_cord
 	PRINTSTR low_ram
-	PRINTSTR second_pattern
+	lda	currpattern
+	jsr	printpat
 	lda	#$2F		; /
 	sta	VERA_DATA0
 	inc	VERA_ADDR_L
-	PRINTSTR second_pattern
-	lda	#%01010101
+	lda	currpattern
+	eor	#$FF
+	jsr	printpat
+	lda	currpattern
 	jsr	testbase
-
 	inc	y_cord
-	GOTOXY x_cord, y_cord
-	PRINTSTR low_ram
-	PRINTSTR third_pattern
-	lda	#$2F		; /
-	sta	VERA_DATA0
-	inc	VERA_ADDR_L
-	PRINTSTR third_invert
-	lda	#%00110011
-	jsr	testbase
+	lda	currpattern
 
-	inc	y_cord
-	GOTOXY x_cord, y_cord
-	PRINTSTR low_ram
-	PRINTSTR fourth_pattern
-	lda	#$2F		; /
-	sta	VERA_DATA0
-	inc	VERA_ADDR_L
-	PRINTSTR fourth_invert
-	lda	#%00001111
-	jsr	testbase
+	cmp	#$00
+	bne	:+
+	lda	#$55
+	sta	currpattern
+	bra	btest
+:	cmp	#$55
+	bne	:+
+	lda	#$33
+	sta	currpattern
+	bra	btest
+:	cmp	#$33
+	bne	:+
+	lda	#$0F
+	sta	currpattern
+	bra	btest
 
-	lda	#7
+:	lda	#7
 	jsr	kbdwrite
 	jsr	show_pass_done
 
@@ -335,6 +174,113 @@ test_start:
 	sta	VERA_DC_VIDEO
 
 	jmp	test_start
+
+print1stpat:
+	PRINTSTR first_pattern
+	rts
+print1stinv:
+	PRINTSTR first_invert
+	rts
+print2ndpat:
+	PRINTSTR second_pattern
+	rts
+print2ndinv:
+	PRINTSTR second_invert
+	rts
+print3rdpat:
+	PRINTSTR third_pattern
+	rts
+print3rdinv:
+	PRINTSTR third_invert
+	rts
+print4thpat:
+	PRINTSTR fourth_pattern
+	rts
+print4thinv:
+	PRINTSTR fourth_invert
+	rts
+printpat:
+	cmp	#$00
+	bne	:+
+	jmp	print1stpat
+:	cmp	#$FF
+	bne	:+
+	jmp	print1stinv
+:	cmp	#$55
+	bne	:+
+	jmp	print2ndpat
+:	cmp	#$AA
+	bne	:+
+	jmp	print2ndinv
+:	cmp	#$33
+	bne	:+
+	jmp	print3rdpat
+:	cmp	#$CC
+	bne	:+
+	jmp	print3rdinv
+:	cmp	#$0F
+	bne	:+
+	jmp	print4thpat
+:	jmp	print4thinv	
+
+testpattern:
+	sta	currpattern
+	lda	testnum
+	jsr	kbdwrite
+	GOTOXY	x_cord, y_cord
+	PRINTSTR fill_pattern
+	lda	currpattern
+	jsr	printpat
+	lda	currpattern
+	jsr	fillbanks
+
+	inc	y_cord
+	GOTOXY	x_cord, y_cord
+	PRINTSTR test_up
+	lda	currpattern		;00
+	jsr	printpat
+	lda	currpattern
+	jsr	up_test
+
+	inc	y_cord
+	GOTOXY	x_cord, y_cord
+	PRINTSTR test_up
+	lda	currpattern
+	eor	#$FF			;FF
+	sta	currpattern
+	jsr	printpat
+	lda	currpattern
+	jsr	up_test
+
+	inc	y_cord
+	GOTOXY	x_cord, y_cord
+	PRINTSTR test_dn
+	lda	currpattern
+	eor	#$FF			;00
+	sta	currpattern
+	jsr	printpat
+	lda	currpattern
+	jsr	down_test
+
+	inc	y_cord
+	GOTOXY	x_cord, y_cord
+	PRINTSTR test_dn
+	lda	currpattern
+	eor	#$FF			;FF
+	sta	currpattern
+	jsr	printpat
+	lda	currpattern
+	jsr	down_test
+
+	inc	y_cord
+	GOTOXY	x_cord, y_cord
+	PRINTSTR test_final
+	lda	currpattern
+	eor	#$FF			;00
+	sta	currpattern
+	jsr	printpat
+	lda	currpattern
+	jmp	testbanks
 
 ; .A = code to show on LEDs in binary
 kbdwrite:
